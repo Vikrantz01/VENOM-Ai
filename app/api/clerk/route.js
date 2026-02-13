@@ -5,7 +5,13 @@ import { headers } from "next/headers";
 
 export async function POST(req) {
 
-    const wh = new Webhook(process.env.SIGNING_SECRET);
+    const secret = process.env.SIGNING_SECRET;
+
+    if (!secret) {
+        throw new Error("SIGNING_SECRET is missing");
+    }
+
+    const wh = new Webhook(secret);
 
     const headerPayload = headers();
 
@@ -15,10 +21,18 @@ export async function POST(req) {
         "svix-signature": headerPayload.get("svix-signature"),
     };
 
-    const payload = await req.json();
-    const body = JSON.stringify(payload);
+    // ✅ IMPORTANT — raw body use karo
+    const body = await req.text();
 
-    const { data, type } = wh.verify(body, svixHeaders);
+    let evt;
+
+    try {
+        evt = wh.verify(body, svixHeaders);
+    } catch (err) {
+        return new Response("Invalid webhook", { status: 400 });
+    }
+
+    const { data, type } = evt;
 
     const userData = {
         _id: data.id,
