@@ -21,7 +21,7 @@ export async function POST(req) {
         "svix-signature": headerPayload.get("svix-signature"),
     };
 
-    // ✅ IMPORTANT — raw body use karo
+   
     const body = await req.text();
 
     let evt;
